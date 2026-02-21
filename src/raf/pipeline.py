@@ -138,7 +138,8 @@ class DataPipeline:
             self.config.ticker,
             start=self.config.start_date,
             end=self.config.end_date,
-            progress=False,
+            auto_adjust=False,  
+            progress=False
         )
         
         # Ensure UTC timezone
