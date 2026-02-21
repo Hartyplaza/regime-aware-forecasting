@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Tuple, List, Dict
 from dataclasses import dataclass
 
-from config import (
+from .config import (
     MIN_DATA_POINTS,
     MAX_MISSING_PCT,
     OUTLIER_ZSCORE_THRESHOLD,

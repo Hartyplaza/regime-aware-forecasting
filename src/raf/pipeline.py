@@ -10,8 +10,8 @@ from dataclasses import dataclass
 import logging
 
 import yfinance as yf
-from config import DataConfig, DIRECTION_FORWARD_WINDOW
-from validation import DataValidator, ValidationReport
+from .config import DataConfig, DIRECTION_FORWARD_WINDOW
+from .validation import DataValidator, ValidationReport
 
 
 # Configure logging
