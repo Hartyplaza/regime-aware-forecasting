@@ -11,8 +11,8 @@ from dataclasses import dataclass
 import logging
 
 import yfinance as yf
-from config import DataConfig, DIRECTION_FORWARD_WINDOW
-from validation import DataValidator, ValidationReport
+from .config import DataConfig, DIRECTION_FORWARD_WINDOW
+from .validation import DataValidator, ValidationReport
 
 # Suppress yfinance FutureWarning about auto_adjust default
 warnings.filterwarnings("ignore", category=FutureWarning, module="yfinance")
