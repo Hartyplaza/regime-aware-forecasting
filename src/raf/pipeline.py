@@ -3,6 +3,7 @@ Data pipeline: ingestion, cleaning, and feature engineering.
 Orchestrates all data preparation for downstream modeling.
 """
 
+import warnings
 import numpy as np
 import pandas as pd
 from typing import Optional, Tuple
@@ -10,8 +11,11 @@ from dataclasses import dataclass
 import logging
 
 import yfinance as yf
-from .config import DataConfig, DIRECTION_FORWARD_WINDOW
-from .validation import DataValidator, ValidationReport
+from config import DataConfig, DIRECTION_FORWARD_WINDOW
+from validation import DataValidator, ValidationReport
+
+# Suppress yfinance FutureWarning about auto_adjust default
+warnings.filterwarnings("ignore", category=FutureWarning, module="yfinance")
 
 
 # Configure logging
@@ -138,8 +142,7 @@ class DataPipeline:
             self.config.ticker,
             start=self.config.start_date,
             end=self.config.end_date,
-            auto_adjust=False,  
-            progress=False
+            progress=False,
         )
         
         # Ensure UTC timezone
@@ -148,25 +151,7 @@ class DataPipeline:
         else:
             df.index = df.index.tz_convert("UTC")
         
-        # --- Standardize columns safely (no hardcoding) ---
-        # Flatten MultiIndex columns if present
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        
-        # Strip/normalize column labels
-        df.columns = [str(c).strip() for c in df.columns]
-        
-        # If Adj Close exists, keep it (optional). If not, that's okay.
-        required = ["Open", "High", "Low", "Close"]
-        missing = [c for c in required if c not in df.columns]
-        if missing:
-            raise ValueError(f"Missing required OHLC columns: {missing}. Got: {list(df.columns)}")
-        
-        # Volume should exist for SPY; but handle gracefully anyway
-        if "Volume" not in df.columns:
-            df["Volume"] = np.nan
-        
-        # Keep only what the pipeline uses downstream
+        # Select only required columns (yfinance returns: Open, High, Low, Close, Adj Close, Volume)
         df = df[["Open", "High", "Low", "Close", "Volume"]]
         
         return df
