@@ -10,8 +10,8 @@ from dataclasses import dataclass
 import logging
 
 import yfinance as yf
-from .config import DataConfig, DIRECTION_FORWARD_WINDOW
-from .validation import DataValidator, ValidationReport
+from config import DataConfig, DIRECTION_FORWARD_WINDOW
+from validation import DataValidator, ValidationReport
 
 
 # Configure logging
@@ -32,11 +32,9 @@ class PipelineOutput:
     feature_names: list  # Names of engineered features (excluding target)
     
     def __post_init__(self):
-        """Freeze dataframes."""
+        """Make independent copies so callers cannot mutate pipeline data."""
         self.df = self.df.copy()
         self.raw_df = self.raw_df.copy()
-        self.df.flags.writeable = False
-        self.raw_df.flags.writeable = False
     
     def get_features(self, include_target: bool = False) -> pd.DataFrame:
         """
@@ -138,9 +136,14 @@ class DataPipeline:
             self.config.ticker,
             start=self.config.start_date,
             end=self.config.end_date,
-            auto_adjust=False,  
-            progress=False
+            auto_adjust=True,   # Returns clean OHLCV; avoids MultiIndex mess in yfinance >= 0.2
+            progress=False,
         )
+        
+        # Flatten MultiIndex columns BEFORE any name checks (yfinance >= 0.2 returns MultiIndex)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        df.columns = [str(c).strip() for c in df.columns]
         
         # Ensure UTC timezone
         if df.index.tz is None:
@@ -148,25 +151,7 @@ class DataPipeline:
         else:
             df.index = df.index.tz_convert("UTC")
         
-        # --- Standardize columns safely (no hardcoding) ---
-        # Flatten MultiIndex columns if present
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        
-        # Strip/normalize column labels
-        df.columns = [str(c).strip() for c in df.columns]
-        
-        # If Adj Close exists, keep it (optional). If not, that's okay.
-        required = ["Open", "High", "Low", "Close"]
-        missing = [c for c in required if c not in df.columns]
-        if missing:
-            raise ValueError(f"Missing required OHLC columns: {missing}. Got: {list(df.columns)}")
-        
-        # Volume should exist for SPY; but handle gracefully anyway
-        if "Volume" not in df.columns:
-            df["Volume"] = np.nan
-        
-        # Keep only what the pipeline uses downstream
+        # Keep only the canonical OHLCV columns
         df = df[["Open", "High", "Low", "Close", "Volume"]]
         
         return df
@@ -241,6 +226,10 @@ def build_pipeline(config: Optional[DataConfig] = None) -> PipelineOutput:
         config: DataConfig object (optional)
         
     Returns:
+        PipelineOutput
+    """
+    pipeline = DataPipeline(config)
+    return pipeline.run()
         PipelineOutput
     """
     pipeline = DataPipeline(config)
