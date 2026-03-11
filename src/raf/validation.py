@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Tuple, List, Dict
 from dataclasses import dataclass
 
-from .config import (
+from config import (
     MIN_DATA_POINTS,
     MAX_MISSING_PCT,
     OUTLIER_ZSCORE_THRESHOLD,
@@ -159,8 +159,7 @@ class DataValidator:
         filled = df.copy()
         
         # Forward fill, but limit consecutive fills
-        for col in df.columns:
-            filled[col] = filled[col].fillna(method='ffill', limit=max_fill_periods)
+        filled = filled.ffill(limit=max_fill_periods)
         
         # Raise error if any NaN remains
         if filled.isnull().any().any():
