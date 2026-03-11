@@ -2,8 +2,8 @@
 Configuration and constants for the regime-aware forecasting project.
 """
 
-from dataclasses import dataclass
-from typing import Literal
+from dataclasses import dataclass, field
+from typing import List
 
 # Data retrieval
 DATA_TICKER = "SPY"
@@ -36,12 +36,6 @@ class DataConfig:
     ticker: str = DATA_TICKER
     start_date: str = DATA_START_DATE
     end_date: str = DATA_END_DATE
-    volatility_windows: list = None
-    lag_windows: list = None
+    volatility_windows: List[int] = field(default_factory=lambda: list(VOLATILITY_WINDOWS))
+    lag_windows: List[int] = field(default_factory=lambda: list(LAG_WINDOWS))
     direction_window: int = DIRECTION_FORWARD_WINDOW
-    
-    def __post_init__(self):
-        if self.volatility_windows is None:
-            self.volatility_windows = VOLATILITY_WINDOWS
-        if self.lag_windows is None:
-            self.lag_windows = LAG_WINDOWS
