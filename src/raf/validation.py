@@ -92,7 +92,7 @@ class DataValidator:
         
         # Check for obvious pricing errors (OHLC logic)
         invalid_ohlc = (
-            (df["Open"] <= 0) | (df["High"] <= 0) | 
+            (df["Open"] <= 0) | (df["High"] <= 0) |
             (df["Low"] <= 0) | (df["Close"] <= 0) |
             (df["High"] < df["Low"]) |
             (df["High"] < df["Open"]) |
@@ -101,9 +101,11 @@ class DataValidator:
             (df["Low"] > df["Close"])
         )
         
-        if invalid_ohlc.any():
+        invalid_count = int(np.asarray(invalid_ohlc).sum())
+        
+        if invalid_count > 0:
             is_valid = False
-            warnings.append(f"Invalid OHLC relationships detected in {invalid_ohlc.sum()} rows")
+            warnings.append(f"Invalid OHLC relationships detected in {invalid_count} rows")
         
         # Check for volume anomalies
         if (df["Volume"] <= 0).any():
